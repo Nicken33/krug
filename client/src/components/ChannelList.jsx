@@ -147,7 +147,11 @@ export default function ChannelList({
                         return (
                           <div
                             key={u.socketId}
-                            className="flex items-center justify-between px-2 py-1 rounded-md hover:bg-[#35373c]/50 text-xs text-[#dbdee1] transition-colors"
+                            className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-all ${
+                              isSpeaking
+                                ? 'bg-[#23a55a]/15 text-white font-semibold ring-1 ring-[#23a55a]/40 shadow-sm'
+                                : 'text-[#dbdee1] hover:bg-[#35373c]/50'
+                            }`}
                           >
                             <div className="flex items-center gap-2.5 truncate">
                               {/* Avatar */}
@@ -157,13 +161,17 @@ export default function ChannelList({
                                     src={u.avatarUrl}
                                     alt={u.username}
                                     className={`w-6 h-6 rounded-full object-cover transition-all ${
-                                      isSpeaking ? 'ring-2 ring-[#23a55a] shadow-[0_0_8px_#23a55a]' : ''
+                                      isSpeaking
+                                        ? 'ring-2 ring-[#23a55a] shadow-[0_0_10px_#23a55a] scale-110'
+                                        : ''
                                     }`}
                                   />
                                 ) : (
                                   <div
                                     className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white transition-all ${
-                                      isSpeaking ? 'ring-2 ring-[#23a55a] shadow-[0_0_8px_#23a55a]' : ''
+                                      isSpeaking
+                                        ? 'ring-2 ring-[#23a55a] shadow-[0_0_10px_#23a55a] scale-110'
+                                        : ''
                                     }`}
                                     style={{ backgroundColor: u.avatarColor || '#5865f2' }}
                                   >
@@ -172,11 +180,14 @@ export default function ChannelList({
                                 )}
                               </div>
 
-                              <span className="truncate font-medium">{u.username}</span>
+                              <span className={`truncate text-xs ${isSpeaking ? 'text-[#23a55a] font-bold' : 'text-[#dbdee1]'}`}>
+                                {u.username} {u.socketId === currentUser?.socketId && <span className="text-[10px] text-[#949ba4] font-normal">(Вы)</span>}
+                              </span>
                             </div>
 
                             {/* Controls */}
-                            <div className="flex items-center gap-1 text-[#80848e]">
+                            <div className="flex items-center gap-1.5 text-[#80848e]">
+                              {isSpeaking && <Volume2 className="w-3.5 h-3.5 text-[#23a55a] animate-pulse" />}
                               {u.isMuted && <MicOff className="w-3.5 h-3.5 text-[#f23f43]" />}
                               {u.isDeafened && <Headphones className="w-3.5 h-3.5 text-[#f23f43]" />}
                               {u.isScreenSharing && <Monitor className="w-3.5 h-3.5 text-[#23a55a] animate-pulse" />}

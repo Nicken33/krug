@@ -14,7 +14,7 @@ export default function InviteModal({
 
   const currentOrigin = (typeof window !== 'undefined' && window.location.origin && !window.location.origin.includes('localhost') && !window.location.origin.startsWith('file:'))
     ? window.location.origin
-    : 'https://krug-discord.onrender.com';
+    : 'https://krug-eu.onrender.com';
   // If public tunnel is available, use it! It works worldwide.
   const baseUrl = (publicTunnelUrl && !publicTunnelUrl.includes('localhost')) ? publicTunnelUrl : currentOrigin;
   const inviteUrl = `${baseUrl}/?room=${encodeURIComponent(room.code)}`;

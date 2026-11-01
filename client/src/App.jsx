@@ -148,12 +148,20 @@ export default function App() {
     });
 
     socket.on('user-joined-voice', ({ user, channelId }) => {
-      setUsers(prev => prev.map(u => u.socketId === user.socketId ? { ...u, currentVoiceChannel: channelId } : u));
+      setUsers(prev => {
+        const exists = prev.some(u => u.socketId === user.socketId);
+        if (exists) {
+          return prev.map(u => u.socketId === user.socketId ? { ...u, currentVoiceChannel: channelId } : u);
+        }
+        return [...prev, { ...user, currentVoiceChannel: channelId }];
+      });
+      setCurrentUser(prev => (prev && prev.socketId === user.socketId) ? { ...prev, currentVoiceChannel: channelId } : prev);
       sounds.playJoin();
     });
 
     socket.on('user-left-voice', ({ socketId }) => {
       setUsers(prev => prev.map(u => u.socketId === socketId ? { ...u, currentVoiceChannel: null, isSpeaking: false, isScreenSharing: false } : u));
+      setCurrentUser(prev => (prev && prev.socketId === socketId) ? { ...prev, currentVoiceChannel: null, isSpeaking: false, isScreenSharing: false } : prev);
       rtcManager.closeVoicePeer(socketId);
       sounds.playLeave();
     });
@@ -164,6 +172,9 @@ export default function App() {
 
     socket.on('user-voice-state-updated', ({ socketId, changes }) => {
       setUsers(prev => prev.map(u => u.socketId === socketId ? { ...u, ...changes } : u));
+      if (socketId === currentUser?.socketId) {
+        setCurrentUser(prev => prev ? { ...prev, ...changes } : prev);
+      }
     });
 
     socket.on('new-message', (msg) => {
@@ -227,6 +238,9 @@ export default function App() {
         threshold: audioSettings.vadThreshold,
         onSpeakingChange: (speaking) => {
           if (audioSettings.inputMode === 'vad' && !isMuted) {
+            // Immediate local update so user avatar and card glow without roundtrip delay
+            setCurrentUser(prev => prev ? { ...prev, isSpeaking: speaking } : prev);
+            setUsers(prev => prev.map(u => u.socketId === currentUser?.socketId ? { ...u, isSpeaking: speaking } : u));
             socket.emit('voice-state-change', { isSpeaking: speaking });
           }
         },
@@ -261,11 +275,16 @@ export default function App() {
     setCenterMode('voice');
     sounds.playJoin();
 
+    // Optimistically update local user state so 1 large card immediately renders
+    setCurrentUser(prev => prev ? { ...prev, currentVoiceChannel: channelId } : prev);
+    setUsers(prev => prev.map(u => u.socketId === currentUser?.socketId ? { ...u, currentVoiceChannel: channelId } : u));
+
     if (!localAudioStream) {
       await initMicrophone();
     }
 
     socket.emit('join-voice', { channelId });
+    rtcManagerRef.current?.startStatsMonitor();
   };
 
   const handleLeaveVoice = () => {
@@ -275,6 +294,10 @@ export default function App() {
     }
     setActiveVoiceChannel(null);
     setCenterMode('chat');
+
+    setCurrentUser(prev => prev ? { ...prev, currentVoiceChannel: null, isSpeaking: false, isScreenSharing: false } : prev);
+    setUsers(prev => prev.map(u => u.socketId === currentUser?.socketId ? { ...u, currentVoiceChannel: null, isSpeaking: false, isScreenSharing: false } : u));
+
     socket.emit('leave-voice');
     rtcManagerRef.current?.cleanupAll();
   };

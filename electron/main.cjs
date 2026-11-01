@@ -5,7 +5,7 @@ const { startServer } = require('../server/server.cjs');
 
 let mainWindow = null;
 const SERVER_PORT = 7880;
-const CLOUD_URL = 'https://krug-discord.onrender.com';
+const CLOUD_URL = 'https://krug-eu.onrender.com';
 
 function ensureServerRunning() {
   return new Promise((resolve) => {

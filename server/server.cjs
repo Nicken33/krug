@@ -101,9 +101,9 @@ function startServer(port = 7880) {
 
   // STUN and free TURN servers (for reliable cross-country & NAT traversal)
   const ICE_SERVERS = [
-    { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun.cloudflare.com:3478' },
     { urls: 'stun:global.stun.twilio.com:3478' },
     {
       urls: [
@@ -246,7 +246,7 @@ function startServer(port = 7880) {
       if (oldChannelId === channelId) return;
 
       if (oldChannelId) {
-        socket.to(user.roomCode).emit('user-left-voice', {
+        io.to(user.roomCode).emit('user-left-voice', {
           socketId: socket.id,
           channelId: oldChannelId
         });
@@ -266,7 +266,8 @@ function startServer(port = 7880) {
         peers: peersInChannel
       });
 
-      socket.to(user.roomCode).emit('user-joined-voice', {
+      // Broadcast to ALL users in room including sender so everyone's state is 100% in sync
+      io.to(user.roomCode).emit('user-joined-voice', {
         user,
         channelId
       });
@@ -281,7 +282,7 @@ function startServer(port = 7880) {
       user.isSpeaking = false;
       user.isScreenSharing = false;
 
-      socket.to(user.roomCode).emit('user-left-voice', {
+      io.to(user.roomCode).emit('user-left-voice', {
         socketId: socket.id,
         channelId
       });
@@ -376,12 +377,12 @@ function startServer(port = 7880) {
       if (user) {
         activeUsers.delete(socket.id);
         if (user.currentVoiceChannel) {
-          socket.to(user.roomCode).emit('user-left-voice', {
+          io.to(user.roomCode).emit('user-left-voice', {
             socketId: socket.id,
             channelId: user.currentVoiceChannel
           });
         }
-        socket.to(user.roomCode).emit('user-left-room', {
+        io.to(user.roomCode).emit('user-left-room', {
           socketId: socket.id,
           userId: user.userId,
           username: user.username

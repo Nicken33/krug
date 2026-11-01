@@ -233,7 +233,7 @@ export default function JoinModal({
                   type="text"
                   value={customServerUrl}
                   onChange={(e) => setCustomServerUrl(e.target.value)}
-                  placeholder="https://krug-discord.onrender.com"
+                  placeholder="https://krug-eu.onrender.com"
                   className="w-full bg-[#2b2d31] text-white font-mono text-xs border border-[#35373c] rounded-lg px-2.5 py-1.5 outline-none focus:border-[#5865f2]"
                 />
               </div>

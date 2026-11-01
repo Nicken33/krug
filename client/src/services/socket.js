@@ -40,8 +40,8 @@ export const getServerUrl = () => {
       return window.location.origin;
     }
   }
-  // 24/7 Cloud server default
-  return 'https://krug-discord.onrender.com';
+  // 24/7 Cloud server default (Frankfurt, Europe for low ping)
+  return 'https://krug-eu.onrender.com';
 };
 
 export let socket = io(getServerUrl(), {
