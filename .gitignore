@@ -8,3 +8,5 @@ bin/
 *.zip
 .env
 krug_data.json
+scripts/git-push.cjs
+*.token
