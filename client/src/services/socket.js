@@ -2,7 +2,7 @@ import { io } from 'socket.io-client';
 
 export const getServerUrl = () => {
   if (typeof window !== 'undefined') {
-    // Check URL parameters for explicit server
+    // Check URL parameters for explicit server override
     const params = new URLSearchParams(window.location.search);
     const serverParam = params.get('server');
     if (serverParam) {
@@ -10,21 +10,38 @@ export const getServerUrl = () => {
       return serverParam;
     }
 
-    const saved = localStorage.getItem('krug_server_url');
-    if (saved && saved.startsWith('http')) {
-      return saved;
+    // In web mode on real public host, ALWAYS prefer current origin!
+    if (
+      window.location.origin &&
+      window.location.origin !== 'null' &&
+      !window.location.origin.startsWith('file:') &&
+      !window.location.hostname.includes('localhost') &&
+      !window.location.hostname.includes('127.0.0.1')
+    ) {
+      return window.location.origin;
     }
 
+    // Vite dev server local port 5173
     if (window.location.port === '5173') {
       return `http://${window.location.hostname}:7880`;
     }
 
-    // In web mode, use current host
-    if (window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file:')) {
+    const saved = localStorage.getItem('krug_server_url');
+    if (saved && saved.startsWith('http') && !saved.includes('localhost')) {
+      return saved;
+    }
+
+    if (
+      window.location.origin &&
+      window.location.origin !== 'null' &&
+      !window.location.origin.startsWith('file:') &&
+      !window.location.origin.includes('localhost')
+    ) {
       return window.location.origin;
     }
   }
-  return 'http://localhost:7880';
+  // 24/7 Cloud server default
+  return 'https://krug-discord.onrender.com';
 };
 
 export let socket = io(getServerUrl(), {

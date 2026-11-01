@@ -1,10 +1,11 @@
-const { app, BrowserWindow, ipcMain, desktopCapturer, globalShortcut } = require('electron');
+const { app, BrowserWindow, ipcMain, desktopCapturer, globalShortcut, session } = require('electron');
 const path = require('path');
 const http = require('http');
 const { startServer } = require('../server/server.cjs');
 
 let mainWindow = null;
 const SERVER_PORT = 7880;
+const CLOUD_URL = 'https://krug-discord.onrender.com';
 
 function ensureServerRunning() {
   return new Promise((resolve) => {
@@ -39,6 +40,7 @@ function createWindow() {
     frame: false, // Discord style frameless
     titleBarStyle: 'hidden',
     backgroundColor: '#1e1f22',
+    icon: path.join(__dirname, '../public/icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -47,15 +49,35 @@ function createWindow() {
     }
   });
 
-  const appUrl = process.env.VITE_DEV_SERVER_URL || `http://localhost:${SERVER_PORT}`;
-  mainWindow.loadURL(appUrl);
+  // Permission handling for audio & screen capture
+  if (session && session.defaultSession) {
+    session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+      const allowed = ['media', 'mediaKeySystem', 'notifications', 'display-capture'];
+      callback(allowed.includes(permission));
+    });
+
+    session.defaultSession.setPermissionCheckHandler(() => true);
+  }
+
+  const isLocalMode = process.argv.includes('--local') || process.env.KRUG_LOCAL === 'true';
+  const targetUrl = process.env.VITE_DEV_SERVER_URL || process.env.KRUG_SERVER_URL || (isLocalMode ? `http://localhost:${SERVER_PORT}` : CLOUD_URL);
+
+  mainWindow.loadURL(targetUrl);
+
+  // If loading cloud fails (e.g. offline), fallback to local server
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.warn(`[Electron] Remote load failed (${errorCode}: ${errorDescription}), falling back to local server`);
+    if (mainWindow && !mainWindow.webContents.getURL().includes('localhost')) {
+      mainWindow.loadURL(`http://localhost:${SERVER_PORT}`);
+    }
+  });
 
   mainWindow.on('maximize', () => {
-    mainWindow.webContents.send('window-maximized-state', true);
+    mainWindow?.webContents.send('window-maximized-state', true);
   });
 
   mainWindow.on('unmaximize', () => {
-    mainWindow.webContents.send('window-maximized-state', false);
+    mainWindow?.webContents.send('window-maximized-state', false);
   });
 
   mainWindow.on('closed', () => {
@@ -101,6 +123,7 @@ ipcMain.handle('get-desktop-sources', async () => {
 });
 
 app.whenReady().then(async () => {
+  // Ensure background local server is available as fallback
   await ensureServerRunning();
   createWindow();
 
