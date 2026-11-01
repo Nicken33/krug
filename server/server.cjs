@@ -391,6 +391,14 @@ function startServer(port = 7880) {
     });
   });
 
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.warn(`[Server] Port ${listenPort} is already in use. Reusing running server.`);
+    } else {
+      console.error('[Server] Server error:', err.message);
+    }
+  });
+
   server.listen(listenPort, '0.0.0.0', () => {
     console.log(`[Server] «Круг» running on http://0.0.0.0:${listenPort}`);
   });

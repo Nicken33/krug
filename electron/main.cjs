@@ -4,6 +4,11 @@ const fs = require('fs');
 const http = require('http');
 const { startServer } = require('../server/server.cjs');
 
+// Prevent unexpected crash dialogs from non-critical background network errors
+process.on('uncaughtException', (err) => {
+  console.warn('[Electron] Uncaught exception handled gracefully:', err.message);
+});
+
 // Single Instance Lock (prevents duplicate processes)
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
@@ -14,6 +19,7 @@ if (!gotTheLock) {
 let mainWindow = null;
 let tray = null;
 let isQuitting = false;
+let localServerInstance = null;
 const SERVER_PORT = 7880;
 const CLOUD_URL = 'https://krug-eu.onrender.com';
 
@@ -22,7 +28,8 @@ function getIconPath() {
     path.join(__dirname, 'icon.ico'),
     path.join(__dirname, '../icon.ico'),
     path.join(process.resourcesPath || '', 'icon.ico'),
-    path.join(app.getAppPath(), 'icon.ico')
+    path.join(app.getAppPath(), 'icon.ico'),
+    path.join(app.getAppPath(), '../icon.ico')
   ];
   for (const p of candidates) {
     if (fs.existsSync(p)) return p;
@@ -32,6 +39,8 @@ function getIconPath() {
 
 function ensureServerRunning() {
   return new Promise((resolve) => {
+    if (localServerInstance) return resolve(true);
+
     const req = http.get(`http://localhost:${SERVER_PORT}/api/health`, (res) => {
       console.log('[Electron] Local backend server is already running.');
       resolve(true);
@@ -40,15 +49,15 @@ function ensureServerRunning() {
     req.on('error', () => {
       console.log('[Electron] Starting in-process backend server on port', SERVER_PORT);
       try {
-        startServer(SERVER_PORT);
-        setTimeout(() => resolve(true), 600);
+        localServerInstance = startServer(SERVER_PORT);
+        setTimeout(() => resolve(true), 500);
       } catch (err) {
-        console.error('[Electron] Error starting server:', err);
+        console.warn('[Electron] Server start notice:', err.message);
         resolve(false);
       }
     });
 
-    req.setTimeout(500, () => {
+    req.setTimeout(600, () => {
       req.destroy();
     });
   });
@@ -135,8 +144,9 @@ function createWindow() {
   mainWindow.loadURL(targetUrl);
 
   // If loading cloud fails (e.g. offline), fallback to local server
-  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-    console.warn(`[Electron] Remote load failed (${errorCode}: ${errorDescription}), falling back to local server`);
+  mainWindow.webContents.on('did-fail-load', async (event, errorCode, errorDescription) => {
+    console.warn(`[Electron] Remote load notice (${errorCode}: ${errorDescription}), falling back to local server`);
+    await ensureServerRunning();
     if (mainWindow && !mainWindow.webContents.getURL().includes('localhost')) {
       mainWindow.loadURL(`http://localhost:${SERVER_PORT}`);
     }
@@ -202,8 +212,11 @@ ipcMain.handle('get-desktop-sources', async () => {
 });
 
 app.whenReady().then(async () => {
-  // Ensure background local server is available as fallback
-  await ensureServerRunning();
+  const isLocalMode = process.argv.includes('--local') || process.env.KRUG_LOCAL === 'true';
+  if (isLocalMode) {
+    await ensureServerRunning();
+  }
+
   createWindow();
 
   // Register Global Push-to-Talk Hotkey
