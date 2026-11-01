@@ -1,0 +1,10 @@
+**/node_modules/
+dist-electron/
+dist/
+client/dist/
+build-staging/
+bin/
+*.exe
+*.zip
+.env
+krug_data.json
