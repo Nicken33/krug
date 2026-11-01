@@ -25,10 +25,7 @@ function startCloudflareTunnel(port) {
       const match = text.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
       if (match && !publicTunnelUrl) {
         publicTunnelUrl = match[0];
-        console.log('\n=============================================================');
-        console.log('>>> [Круг] ПУБЛИЧНЫЙ ДОСТУП ДЛЯ ДРУЗЕЙ ИЗ ЛЮБОЙ СТРАНЫ:');
-        console.log(`>>> ${publicTunnelUrl}`);
-        console.log('=============================================================\n');
+        console.log('[Круг] ПУБЛИЧНЫЙ ДОСТУП ДЛЯ ДРУЗЕЙ:', publicTunnelUrl);
       }
     });
 
@@ -53,8 +50,10 @@ function startServer(port = 7880) {
     maxHttpBufferSize: 2e7 // 20MB
   });
 
-  // Start Cloudflare Tunnel in background
-  startCloudflareTunnel(port);
+  const listenPort = Number(process.env.PORT) || Number(port) || 7880;
+
+  // Cloudflare Tunnel only on desktop/local if binary exists
+  startCloudflareTunnel(listenPort);
 
   // Persistence
   const DATA_FILE = path.join(__dirname, 'krug_data.json');
@@ -144,7 +143,7 @@ function startServer(port = 7880) {
   app.get('/api/tunnel', (req, res) => {
     res.json({
       publicTunnelUrl: publicTunnelUrl,
-      port: port
+      port: listenPort
     });
   });
 
@@ -391,8 +390,8 @@ function startServer(port = 7880) {
     });
   });
 
-  server.listen(port, '0.0.0.0', () => {
-    console.log(`[Server] «Круг» running on http://0.0.0.0:${port}`);
+  server.listen(listenPort, '0.0.0.0', () => {
+    console.log(`[Server] «Круг» running on http://0.0.0.0:${listenPort}`);
   });
 
   return { app, server, io };
