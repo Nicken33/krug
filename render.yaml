@@ -1,8 +1,9 @@
 services:
   - type: web
     name: krug-discord
-    env: node
+    runtime: node
     plan: free
+    region: oregon
     buildCommand: npm run build
     startCommand: npm start
     envVars:

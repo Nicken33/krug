@@ -5,39 +5,15 @@
   "main": "server/server.cjs",
   "scripts": {
     "start": "node server/server.cjs",
-    "build": "cd client && npm install && npm run build",
+    "build": "cd client && npm install --include=dev && npm run build",
     "dev:server": "node server/server.cjs",
     "dev:client": "cd client && npm run dev",
-    "build:client": "cd client && npm run build",
-    "build:app": "npm run build:client && electron-builder --win dir"
+    "build:client": "cd client && npm run build"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "socket.io": "^4.8.1"
-  },
-  "devDependencies": {
-    "concurrently": "^9.1.2",
-    "electron": "^34.5.8",
-    "electron-builder": "^25.1.8"
-  },
-  "build": {
-    "appId": "com.krug.app",
-    "productName": "Круг",
-    "icon": "icon.ico",
-    "directories": {
-      "output": "dist-electron"
-    },
-    "win": {
-      "target": "dir",
-      "icon": "icon.ico"
-    },
-    "files": [
-      "electron/**/*",
-      "client/dist/**/*",
-      "server/**/*",
-      "bin/**/*"
-    ]
   }
 }
