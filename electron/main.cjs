@@ -117,6 +117,7 @@ function createWindow() {
     titleBarStyle: 'hidden',
     backgroundColor: '#1e1f22',
     icon: iconPath,
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -124,6 +125,19 @@ function createWindow() {
       backgroundThrottling: false // Keep audio & WebRTC active in background while playing games
     }
   });
+
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+    mainWindow.focus();
+  });
+
+  // Guarantee window is shown within 1.5s regardless of network delays
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isVisible()) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  }, 1500);
 
   createTray(iconPath);
 
@@ -138,7 +152,7 @@ function createWindow() {
   }
 
   const isLocalMode = process.argv.includes('--local') || process.env.KRUG_LOCAL === 'true';
-  const targetUrl = process.env.VITE_DEV_SERVER_URL || process.env.KRUG_SERVER_URL || (isLocalMode ? `http://localhost:${SERVER_PORT}` : CLOUD_URL);
+  const targetUrl = process.env.VITE_DEV_SERVER_URL || process.env.KRUG_SERVER_URL || (isLocalMode ? `http://localhost:${SERVER_PORT}` : `${CLOUD_URL}/?room=krug-main`);
 
   console.log('[Electron] Loading application URL:', targetUrl);
   mainWindow.loadURL(targetUrl);

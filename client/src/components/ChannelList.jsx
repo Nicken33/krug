@@ -45,7 +45,11 @@ export default function ChannelList({
   ];
 
   const getVoiceUsers = (voiceId) => {
-    return users.filter(u => u.currentVoiceChannel === voiceId);
+    let list = users.filter(u => u.currentVoiceChannel === voiceId);
+    if (activeVoiceChannel === voiceId && currentUser && !list.some(u => (u.socketId && u.socketId === currentUser.socketId) || u.username === currentUser.username)) {
+      list = [{ ...currentUser, currentVoiceChannel: voiceId }, ...list];
+    }
+    return list;
   };
 
   return (
@@ -239,24 +243,34 @@ export default function ChannelList({
               <img
                 src={currentUser.avatarUrl}
                 alt={currentUser.username}
-                className="w-8 h-8 rounded-full object-cover"
+                className={`w-8 h-8 rounded-full object-cover transition-all ${
+                  currentUser?.isSpeaking ? 'ring-2 ring-[#23a55a] shadow-[0_0_10px_#23a55a]' : ''
+                }`}
               />
             ) : (
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-xs"
+                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-xs transition-all ${
+                  currentUser?.isSpeaking ? 'ring-2 ring-[#23a55a] shadow-[0_0_10px_#23a55a]' : ''
+                }`}
                 style={{ backgroundColor: currentUser?.avatarColor || '#5865f2' }}
               >
                 {(currentUser?.username || 'Я').slice(0, 1).toUpperCase()}
               </div>
             )}
-            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#23a55a] border-2 border-[#232428]" />
+            <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#232428] ${
+              currentUser?.isSpeaking ? 'bg-[#23a55a] animate-pulse ring-1 ring-white' : 'bg-[#23a55a]'
+            }`} />
           </div>
 
           <div className="truncate">
-            <div className="text-xs font-semibold text-[#f2f3f5] truncate">
+            <div className={`text-xs font-semibold truncate transition-colors ${
+              currentUser?.isSpeaking ? 'text-[#23a55a] font-bold' : 'text-[#f2f3f5]'
+            }`}>
               {currentUser?.username || 'Гость'}
             </div>
-            <div className="text-[10px] text-[#949ba4] truncate">В сети</div>
+            <div className="text-[10px] text-[#949ba4] truncate">
+              {currentUser?.isSpeaking ? 'Говорит...' : 'В сети'}
+            </div>
           </div>
         </div>
 

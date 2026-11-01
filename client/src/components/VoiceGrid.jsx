@@ -43,7 +43,16 @@ export default function VoiceGrid({
   });
 
   const activeStream = screenShares.length > 0 ? screenShares[0] : null;
-  const count = voiceUsers.length;
+
+  // Guarantee that if currentUser is in voice, they are always displayed (never 0 users)
+  const displayUsers = [...voiceUsers];
+  if (currentUser && !displayUsers.some(u => (u.socketId && u.socketId === currentUser.socketId) || (u.username && u.username === currentUser.username))) {
+    displayUsers.unshift({
+      ...currentUser,
+      currentVoiceChannel: voiceChannelName
+    });
+  }
+  const count = displayUsers.length;
 
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
@@ -168,13 +177,13 @@ export default function VoiceGrid({
             )}
 
             {/* Participant Rectangles */}
-            {voiceUsers.map((user) => {
-              const isSpeaking = user.isSpeaking;
-              const isMe = user.socketId === currentUser?.socketId;
+            {displayUsers.map((user) => {
+              const isMe = (user.socketId && user.socketId === currentUser?.socketId) || user.username === currentUser?.username;
+              const isSpeaking = user.isSpeaking || (isMe && currentUser?.isSpeaking);
 
               return (
                 <div
-                  key={user.socketId}
+                  key={user.socketId || user.username}
                   className={`w-48 h-28 bg-[#2b2d31] rounded-xl flex flex-col items-center justify-center relative flex-shrink-0 transition-all duration-150 border-2 overflow-hidden shadow-lg ${
                     isSpeaking
                       ? 'border-[#23a55a] ring-2 ring-[#23a55a]/60 shadow-[0_0_20px_rgba(35,165,90,0.5)]'
@@ -237,13 +246,13 @@ export default function VoiceGrid({
                 : 'grid-cols-2 max-w-6xl max-h-[78vh]'
             }`}
           >
-            {voiceUsers.map((user) => {
-              const isSpeaking = user.isSpeaking;
-              const isMe = user.socketId === currentUser?.socketId;
+            {displayUsers.map((user) => {
+              const isMe = (user.socketId && user.socketId === currentUser?.socketId) || user.username === currentUser?.username;
+              const isSpeaking = user.isSpeaking || (isMe && currentUser?.isSpeaking);
 
               return (
                 <div
-                  key={user.socketId}
+                  key={user.socketId || user.username}
                   className={`w-full h-full min-h-[240px] bg-[#2b2d31] rounded-2xl flex flex-col items-center justify-center relative group border-2 transition-all duration-150 shadow-2xl overflow-hidden ${
                     isSpeaking
                       ? 'border-[#23a55a] ring-4 ring-[#23a55a]/60 shadow-[0_0_30px_rgba(35,165,90,0.6)]'

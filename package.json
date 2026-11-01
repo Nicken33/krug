@@ -2,7 +2,7 @@
   "name": "krug",
   "version": "1.0.0",
   "description": "Круг — Discord-подобный голосовой и текстовый мессенджер для друзей",
-  "main": "server/server.cjs",
+  "main": "electron/main.cjs",
   "scripts": {
     "start": "node server/server.cjs",
     "build": "npm install && cd client && npm install --include=dev && npm run build",

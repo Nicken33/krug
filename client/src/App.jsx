@@ -277,7 +277,19 @@ export default function App() {
 
     // Optimistically update local user state so 1 large card immediately renders
     setCurrentUser(prev => prev ? { ...prev, currentVoiceChannel: channelId } : prev);
-    setUsers(prev => prev.map(u => u.socketId === currentUser?.socketId ? { ...u, currentVoiceChannel: channelId } : u));
+    setUsers(prev => {
+      const exists = prev.some(u => (u.socketId && u.socketId === currentUser?.socketId) || (u.username && u.username === currentUser?.username));
+      if (exists) {
+        return prev.map(u => ((u.socketId && u.socketId === currentUser?.socketId) || (u.username && u.username === currentUser?.username))
+          ? { ...u, currentVoiceChannel: channelId }
+          : u
+        );
+      }
+      if (currentUser) {
+        return [...prev, { ...currentUser, currentVoiceChannel: channelId }];
+      }
+      return prev;
+    });
 
     if (!localAudioStream) {
       await initMicrophone();
@@ -296,7 +308,10 @@ export default function App() {
     setCenterMode('chat');
 
     setCurrentUser(prev => prev ? { ...prev, currentVoiceChannel: null, isSpeaking: false, isScreenSharing: false } : prev);
-    setUsers(prev => prev.map(u => u.socketId === currentUser?.socketId ? { ...u, currentVoiceChannel: null, isSpeaking: false, isScreenSharing: false } : u));
+    setUsers(prev => prev.map(u => ((u.socketId && u.socketId === currentUser?.socketId) || (u.username && u.username === currentUser?.username))
+      ? { ...u, currentVoiceChannel: null, isSpeaking: false, isScreenSharing: false }
+      : u
+    ));
 
     socket.emit('leave-voice');
     rtcManagerRef.current?.cleanupAll();
@@ -422,7 +437,10 @@ export default function App() {
   };
 
   const currentMessages = messages.filter(m => m.channelId === currentChannel);
-  const voiceUsers = users.filter(u => u.currentVoiceChannel === activeVoiceChannel);
+  let voiceUsers = users.filter(u => u.currentVoiceChannel === activeVoiceChannel);
+  if (activeVoiceChannel && currentUser && !voiceUsers.some(u => (u.socketId && u.socketId === currentUser.socketId) || (u.username && u.username === currentUser.username))) {
+    voiceUsers = [{ ...currentUser, currentVoiceChannel: activeVoiceChannel }, ...voiceUsers];
+  }
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#1e1f22]">
