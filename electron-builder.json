@@ -1,0 +1,33 @@
+{
+  "appId": "com.krug.discord",
+  "productName": "Круг",
+  "directories": {
+    "output": "dist-electron"
+  },
+  "files": [
+    "electron/**/*",
+    "server/**/*",
+    "client/dist/**/*",
+    "icon.ico",
+    "package.json"
+  ],
+  "win": {
+    "icon": "icon.ico",
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ],
+    "signAndEditExecutable": false
+  },
+  "nsis": {
+    "oneClick": true,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": false,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Круг",
+    "artifactName": "Круг-Setup-${version}.${ext}"
+  }
+}
